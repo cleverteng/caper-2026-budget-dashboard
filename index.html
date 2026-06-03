@@ -371,30 +371,35 @@ function renderKPIs(){
 }
 
 function renderTrend(){
-  const fy=FYP(OT);
+  // Actual only for M1-5, Estimate as separate line for M6-12
+  const actualData=OT.a.map(v=>+v.toFixed(1));  // 5 months
+  const estData=OT.e.map(v=>+v.toFixed(1));      // 7 months
+  const budgetData=OT.b.map(v=>+v.toFixed(1));
+
   C.trend.setOption({
     tooltip:{trigger:'axis',axisPointer:{type:'cross'},formatter:p=>{
       let s=`<b>${p[0].axisValue} 2026</b><br/>`;
-      p.forEach(x=>{s+=`${x.marker} ${x.seriesName}: <b>${x.value.toFixed(1)}</b> K<br/>`});
+      p.forEach(x=>{if(x.value!=null)s+=`${x.marker} ${x.seriesName}: <b>${x.value.toFixed(1)}</b> K<br/>`});
       return s;
     }},
-    legend:{data:[t('budget'),t('actual')],top:0},
-    grid:{left:50,right:20,top:40,bottom:30},
+    legend:{data:[t('budget'),'Actual (M1-5)','Estimate (M6-12)'],top:0},
+    grid:{left:50,right:20,top:45,bottom:30},
     xAxis:{type:'category',data:M},
     yAxis:{type:'value',name:'K USD'},
     series:[
-      {name:t('budget'),type:'line',data:OT.b,lineStyle:{width:2.5,color:'#1a73e8',type:'dashed'},itemStyle:{color:'#1a73e8'},symbol:'circle',symbolSize:5},
-      {name:t('actual'),type:'line',data:fy,lineStyle:{width:2.5,color:'#0d904f'},itemStyle:{color:'#0d904f'},symbol:'diamond',symbolSize:6,
-        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(13,144,79,0.1)'},{offset:1,color:'rgba(13,144,79,0)'}])},
-        markArea:{silent:true,data:[[{xAxis:'May',itemStyle:{color:'rgba(26,115,232,0.03)'}},{xAxis:'Dec'}]],label:{show:true,position:'insideTop',formatter:t('estZone'),fontSize:10,color:'#999'}}
-      }
+      {name:t('budget'),type:'line',data:budgetData,lineStyle:{width:3,color:'#1a73e8'},itemStyle:{color:'#1a73e8'},symbol:'circle',symbolSize:5,
+        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(26,115,232,0.08)'},{offset:1,color:'rgba(26,115,232,0)'}])}
+      },
+      {name:'Actual (M1-5)',type:'line',data:[...actualData,...Array(7).fill(null)],lineStyle:{width:3,color:'#0d904f'},itemStyle:{color:'#0d904f'},symbol:'diamond',symbolSize:7,connectNulls:false},
+      {name:'Estimate (M6-12)',type:'line',data:[...Array(5).fill(null),...estData],lineStyle:{width:2.5,color:'#0d904f',type:'dashed'},itemStyle:{color:'#0d904f'},symbol:'triangle',symbolSize:6,connectNulls:false}
     ]
   },true);
 }
 
 function renderRDBudget(){
-  const ps=Object.entries(RD).filter(([k,p])=>!p.m4&&p.bytd>0);
-  const ns=ps.map(([k,p])=>{const n=p.n.replace('R&D-','');return n.length>22?n.substring(0,20)+'..':n});
+  // Sort by project number (ascending) for Non-M4 with budget > 0
+  const ps=Object.entries(RD).filter(([k,p])=>!p.m4&&p.bytd>0).sort((a,b)=>a[1].n.localeCompare(b[1].n));
+  const ns=ps.map(([k,p])=>{const n=p.n;return n.length>24?n.substring(0,22)+'..':n});
   const rates=ps.map(([k,p])=>p.bytd>0?+(p.ytd/p.bytd*100).toFixed(1):0);
   const acts=ps.map(([k,p])=>+p.ytd.toFixed(1));
   const buds=ps.map(([k,p])=>+p.bytd.toFixed(1));
