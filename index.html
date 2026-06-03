@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caper China 2026 Budget Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --primary: #1a73e8; --primary-light: #e8f0fe;
+    --success: #0d904f; --success-light: #e6f4ea;
+    --danger: #d93025;  --danger-light: #fce8e6;
+    --warning: #f9ab00; --warning-light: #fef7e0;
+    --purple: #7b1fa2;  --purple-light: #f3e5f5;
+    --teal: #00796b;    --teal-light: #e0f2f1;
+    --bg: #f8f9fa; --card: #ffffff; --text: #202124; --text-sec: #5f6368; --border: #e0e0e0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12); --shadow-lg: 0 4px 12px rgba(0,0,0,0.15); --radius: 12px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+  .header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .header-left h1{font-size:18px;font-weight:700;margin-bottom:1px}
+  .header-left p{font-size:11px;opacity:.85}
+  .lang-toggle{display:flex;background:rgba(255,255,255,.15);border-radius:7px;overflow:hidden;border:1px solid rgba(255,255,255,.3)}
+  .lang-btn{padding:5px 16px;border:none;background:0 0;color:rgba(255,255,255,.7);cursor:pointer;font-size:12px;font-weight:600;transition:.3s}
+  .lang-btn.active{background:rgba(255,255,255,.95);color:var(--primary)}
+  .container{max-width:1440px;margin:0 auto;padding:16px 16px 36px}
+
+  /* Banner */
+  .banner{background:var(--card);border-radius:var(--radius);padding:10px 16px;margin-bottom:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px}
+  .banner .ico{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:700;flex-shrink:0}
+  .banner .ico.blue{background:linear-gradient(135deg,#1a73e8,#4285f4)}
+  .banner .ico.purple{background:linear-gradient(135deg,#7b1fa2,#ab47bc)}
+  .banner .ico.teal{background:linear-gradient(135deg,#00796b,#26a69a)}
+  .banner h2{font-size:14px;font-weight:700}
+  .banner p{font-size:11px;color:var(--text-sec)}
+
+  /* KPI */
+  .kpi-grid{display:grid;gap:10px;margin-bottom:12px}
+  .kpi-grid.c5{grid-template-columns:repeat(5,1fr)}
+  .kpi-grid.c3{grid-template-columns:repeat(3,1fr)}
+  .kpi-card{background:var(--card);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);border-left:4px solid var(--primary);transition:transform .15s}
+  .kpi-card:hover{transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+  .kpi-card.green{border-left-color:var(--success)}
+  .kpi-card.red{border-left-color:var(--danger)}
+  .kpi-card.yellow{border-left-color:var(--warning)}
+  .kpi-card.purple{border-left-color:var(--purple)}
+  .kpi-card.teal{border-left-color:var(--teal)}
+  .kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-sec);margin-bottom:3px;letter-spacing:.4px}
+  .kpi-value{font-size:22px;font-weight:700;margin-bottom:2px}
+  .kpi-sub{font-size:11px;color:var(--text-sec)}
+  .kpi-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600;margin-left:3px}
+  .kpi-badge.g{background:var(--success-light);color:var(--success)}
+  .kpi-badge.r{background:var(--danger-light);color:var(--danger)}
+  .kpi-badge.y{background:var(--warning-light);color:#e37400}
+  .pbar{height:6px;background:#e8e8e8;border-radius:3px;overflow:hidden;margin-top:4px}
+  .pfill{height:100%;border-radius:3px;transition:width .5s}
+  .pfill.green{background:linear-gradient(90deg,#0d904f,#34a853)}
+  .pfill.blue{background:linear-gradient(90deg,#1a73e8,#4285f4)}
+  .pfill.red{background:linear-gradient(90deg,#d93025,#ea4335)}
+  .pfill.purple{background:linear-gradient(90deg,#7b1fa2,#ab47bc)}
+  .pfill.teal{background:linear-gradient(90deg,#00796b,#26a69a)}
+  .plbl{font-size:10px;color:var(--text-sec);text-align:right;margin-top:1px}
+  .tag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600}
+  .tag-m4{background:var(--purple-light);color:var(--purple)}
+  .tag-nb{background:var(--warning-light);color:#e37400}
+  .other-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+  .other-chip{font-size:10px;color:var(--text-sec);background:#f1f3f4;padding:2px 8px;border-radius:10px}
+
+  /* Charts */
+  .stitle{font-size:13px;font-weight:700;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--primary)}
+  .stitle.purple{border-left-color:var(--purple)}
+  .stitle.teal{border-left-color:var(--teal)}
+  .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+  .ccard{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+  .ccard.full{grid-column:1/-1}
+  .cbox{width:100%;height:340px}
+  .cbox.tall{height:380px}
+  .cbox.short{height:260px}
+
+  /* Table */
+  .twrap{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{background:var(--primary-light);color:var(--primary);font-weight:600;padding:6px 8px;text-align:right;border-bottom:2px solid var(--primary);white-space:nowrap}
+  th:first-child{text-align:left}
+  td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--border)}
+  td:first-child{text-align:left;font-weight:500}
+  tr.trow{background:var(--primary-light);font-weight:700}
+  tr.trow td{border-top:2px solid var(--primary)}
+  tr.srow{background:#f5f7fa;font-weight:600}
+  .vp{color:var(--success)}.vn{color:var(--danger)}
+  .footer{text-align:center;padding:12px;color:var(--text-sec);font-size:10px}
+
+  @media(max-width:1024px){.kpi-grid.c5{grid-template-columns:repeat(3,1fr)}.cgrid{grid-template-columns:1fr}}
+  @media(max-width:640px){.kpi-grid.c5,.kpi-grid.c3{grid-template-columns:1fr 1fr}.header{flex-direction:column;gap:8px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1 id="headerTitle">Caper China 2026 Budget Dashboard</h1>
+    <p id="headerSub">Unit: K USD | M1-5 Actual + M6-12 Estimate</p>
+  </div>
+  <div class="lang-toggle">
+    <button class="lang-btn" onclick="switchLang('zh')">中文</button>
+    <button class="lang-btn active" onclick="switchLang('en')">English</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ===== OPEX ===== -->
+  <div class="banner" id="bannerOpEx">
+    <div class="ico blue">O</div>
+    <div><h2 id="banOpExT">OpEx Budget Progress</h2><p id="banOpExS">Non-Payroll Operating Expenses</p></div>
+  </div>
+  <div class="kpi-grid c5" id="kpiOpEx"></div>
+
+  <!-- OpEx + R&D charts side by side -->
+  <div class="cgrid">
+    <div class="ccard">
+      <div class="stitle" id="tOpExTrend">OpEx Monthly: Budget vs Actual</div>
+      <div class="cbox" id="cOpExTrend"></div>
+    </div>
+    <div class="ccard">
+      <div class="stitle purple" id="tRDBudget">R&D Non-M4: Budget Utilization</div>
+      <div class="cbox" id="cRDBudget"></div>
+    </div>
+  </div>
+
+  <!-- ===== R&D ===== -->
+  <div class="banner" id="bannerRD">
+    <div class="ico purple">R</div>
+    <div><h2 id="banRDT">R&D Budget Progress</h2><p id="banRDS">Non-M4: Actual vs Budget | M4: Actual Spend Only (No Budget)</p></div>
+  </div>
+  <div class="kpi-grid c3" id="kpiRD"></div>
+
+  <div class="cgrid">
+    <div class="ccard">
+      <div class="stitle purple" id="tRDM4">M4 Projects: Actual Spend (No Budget)</div>
+      <div class="cbox short" id="cRDM4"></div>
+    </div>
+    <div class="ccard">
+      <div class="stitle purple" id="tRDMonthly">R&D Monthly: M4 vs Non-M4 vs Budget</div>
+      <div class="cbox short" id="cRDMonthly"></div>
+    </div>
+  </div>
+
+  <!-- ===== OTHER DIMENSIONS ===== -->
+  <div class="banner" id="bannerOther">
+    <div class="ico teal">+</div>
+    <div><h2 id="banOtherT">Other Expense Dimensions</h2><p id="banOtherS">HC, Capex & Corporate Level (separate from OpEx budget)</p></div>
+  </div>
+
+  <div class="cgrid">
+    <div class="ccard">
+      <div class="stitle teal" id="tOtherBar">HC / Capex / Corporate: Budget vs Projected</div>
+      <div class="cbox short" id="cOtherBar"></div>
+    </div>
+    <div class="ccard">
+      <div class="stitle" id="tOpExComp">OpEx Composition (FY2026 Budget)</div>
+      <div class="cbox short" id="cOpExComp"></div>
+    </div>
+  </div>
+
+  <!-- ===== TABLES ===== -->
+  <div class="twrap">
+    <div class="stitle" id="tOpExTbl">OpEx Budget Detail (K USD)</div>
+    <div id="opexTbl"></div>
+  </div>
+  <div class="twrap">
+    <div class="stitle purple" id="tRDTbl">R&D Project Detail (K USD)</div>
+    <div id="rdTbl"></div>
+  </div>
+
+</div>
+
+<div class="footer" id="footer">Data Source: [Caper China] Annual Budget Table 2026 | Dashboard auto-generated by WorkBuddy</div>
+
+<script>
+const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// --- OpEx (Non-Payroll only) ---
+const O={
+  rdHW:{a:[12.3,10.4,-71.6,-24.9,73.1],e:[42.8,42.8,42.8,42.8,42.8,42.8,42.8],b:[42.8,42.8,42.8,42.8,42.8,42.8,42.8,42.8,42.8,42.8,42.8,42.8]},
+  profFee:{a:[-0.0,0.3,0.1,0,0],e:[8.0,8.0,8.0,8.0,8.0,8.0,8.0],b:[8.0,8.0,8.0,8.0,8.0,8.0,8.0,8.0,8.0,8.0,8.0,8.0]},
+  rent:{a:[25.4,25.7,25.5,25.8,26.0],e:[25,25,25,25,25,25,25],b:[25,25,25,25,25,25,25,25,25,25,25,25]},
+  office:{a:[11.2,18.2,17.6,14.3,13.9],e:[15.7,15.7,15.7,15.7,15.7,15.7,15.7],b:[15.7,15.7,15.7,15.7,15.7,15.7,15.7,15.7,15.7,15.7,15.7,15.7]},
+  shipNY:{a:[1.2,0.2,0.3,0.6,0.3],e:[5.9,5.9,5.9,5.9,5.9,5.9,5.9],b:[5.9,5.9,5.9,5.9,5.9,5.9,5.9,5.9,5.9,5.9,5.9,5.9]},
+  soft:{a:[9.0,9.1,14.6,8.5,9.2],e:[12.8,12.8,12.8,12.8,12.8,12.8,12.8],b:[12.8,12.8,12.8,12.8,12.8,12.8,12.8,12.8,12.8,12.8,12.8,12.8]},
+  benGift:{a:[4.3,0.3,1.5,0.6,0.1],e:[7.0,7.0,7.0,7.0,7.0,7.0,7.0],b:[7.0,7.0,7.0,7.0,7.0,7.0,7.0,7.0,7.0,7.0,7.0,7.0]},
+  benHealth:{a:[13.0,12.7,13.9,13.9,14.3],e:[14.3,14.3,14.3,14.3,14.3,14.3,14.3],b:[14.3,14.3,14.3,14.3,14.3,14.3,14.3,14.3,14.3,14.3,14.3,14.3]},
+  te:{a:[3.8,3.0,17.2,19.9,12.5],e:[14.5,14.5,14.5,14.5,14.5,14.5,14.5],b:[14.5,14.5,14.5,14.5,14.5,14.5,14.5,14.5,14.5,14.5,14.5,14.5]},
+  other:{a:[0.1,0.1,0.1,0.1,0.1],e:[0.8,0.8,0.8,0.8,0.8,0.8,0.8],b:[0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8,0.8]},
+};
+const OT={a:[80.3,80.1,19.0,58.8,149.6],e:[146.8,146.8,146.8,146.8,146.8,146.8,146.8],b:[146.8,146.8,146.8,146.8,146.8,146.8,146.8,146.8,146.8,146.8,146.8,146.8]};
+
+// --- Other dimensions ---
+const HC={b:[716.0,748.6,738.5,861.0,831.5,831.5,831.5,831.5,831.5,831.5,831.5,831.5]};
+const CAPEX={b:[24.4,24.4,24.4,24.4,24.4,24.4,24.4,24.4,24.4,24.4,24.4,24.4],a:[4.3,6.3,0,8.2,24.4],e:[24.4,24.4,24.4,24.4,24.4,24.4,24.4]};
+const CORP={b:[123.2,119.8,119.8,119.8,118.3,123.2,123.2,123.2,123.2,123.2,123.2,177.5],a:[29.1,14.0,24.1,19.1,16.3],e:[123.2,123.2,123.2,123.2,123.2,123.2,177.5]};
+
+// --- R&D ---
+const RD={
+  m4Cart:{n:'0115 R&D-Cart Model 4',m4:true,a:[-0.97,2.0,2.19,21.15,0,0,0,0,0,0,0,0],bd:[0,0,0,0,0,0,0,0,0,0,0,0],ytd:24.24,bytd:0},
+  m4Charger:{n:'0118 R&D-M4 Fixed Charger',m4:true,a:[0,0,0,0.29,0,0,0,0,0,0,0,0],bd:[0,0,0,0,0,0,0,0,0,0,0,0],ytd:0.29,bytd:0},
+  cartM3:{n:'0105 R&D-Cart Model 3',m4:false,a:[1.87,6.19,8.01,4.44,0,0,0,0,0,0,0,0],bd:[10.32,10.32,10.32,10.32,10.32,10.32,10.32,10.32,10.32,10.32,10.32,10.32],ytd:20.50,bytd:123.84},
+  cartM35:{n:'0120 R&D-Cart Model 3.5',m4:false,a:[-0.02,0,0.14,0,0,0,0,0,0,0,0,0],bd:[0,0,0,0,0,0,0,0,0,0,0,0],ytd:0.12,bytd:0},
+  selfHeat:{n:'0124 R&D-Self-heating Battery',m4:false,a:[9.24,3.20,0.44,0,0,0,0,0,0,0,0,0],bd:[7.42,7.42,7.42,7.42,7.42,7.42,7.42,7.42,7.42,7.42,7.42,7.42],ytd:12.88,bytd:89.00},
+  cv3200:{n:'0130 R&D-CV-3200G',m4:false,a:[0,0.34,2.18,0.49,0,0,0,0,0,0,0,0],bd:[13.92,13.92,13.92,13.92,13.92,13.92,13.92,13.92,13.92,13.92,13.92,13.92],ytd:3.00,bytd:167.07},
+  m3Scan:{n:'0106 R&D-Cart Model 3 Scan',m4:false,a:[0,0,0,0,0,0,0,0,0,0,0,0],bd:[0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83],ytd:0.00,bytd:10.00},
+  chgV1:{n:'0104 R&D-Fixed charger v1.0',m4:false,a:[-1.52,0,0,0,0,0,0,0,0,0,0,0],bd:[0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83,0.83],ytd:-1.52,bytd:10.00},
+  chgV15:{n:'0121 R&D-Fixed charger v1.5',m4:false,a:[1.77,0,0,0,0,0,0,0,0,0,0,0],bd:[0,0,0,0,0,0,0,0,0,0,0,0],ytd:1.77,bytd:0},
+  accessory:{n:'Accessory (0107/0123-0131)',m4:false,a:[0.54,0.39,0.05,1.99,0,0,0,0,0,0,0,0],bd:[5,5,5,5,5,5,5,5,5,5,5,5],ytd:2.97,bytd:60.00},
+  others:{n:'0109 Others',m4:false,a:[8.98,8.45,-73.62,-23.32,0,0,0,0,0,0,0,0],bd:[10.07,10.07,10.07,10.07,10.07,10.07,10.07,10.07,10.07,10.07,10.07,10.07],ytd:-79.51,bytd:120.79},
+};
+
+// Helpers
+const S=a=>a.reduce((x,y)=>x+y,0);
+const FYA=r=>S(r.a||[]), FYB=r=>S(r.b||r.budget||[]), FYE=r=>S(r.e||[]), FYT=r=>FYA(r)+FYE(r);
+const FYP=r=>[...(r.a||[]),...(r.e||[])];
+const fk=v=>v.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1});
+
+// ===== I18N =====
+let L='en';
+const I={
+  en:{
+    headerTitle:'Caper China 2026 Budget Dashboard',
+    headerSub:'Unit: K USD | M1-5 Actual + M6-12 Estimate',
+    banOpExT:'OpEx Budget Progress',banOpExS:'Non-Payroll Operating Expenses',
+    banRDT:'R&D Budget Progress',banRDS:'Non-M4: Actual vs Budget | M4: Actual Spend Only (No Budget)',
+    banOtherT:'Other Expense Dimensions',banOtherS:'HC, Capex & Corporate Level (separate from OpEx budget)',
+    kBudget:'FY2026 Budget',kYTD:'M1-5 Actual YTD',kForecast:'FY Full-Year Forecast',
+    kOther:'Other Dimensions',kRDBud:'Non-M4 R&D Budget',kRDYTD:'Non-M4 M1-5 Actual',kM4YTD:'M4 M1-5 Actual',
+    kSavings:'Savings',kOverspend:'Overspend',kOnTrack:'On Track',
+    tOpExTrend:'OpEx Monthly: Budget vs Actual/Est.',
+    tRDBudget:'R&D Non-M4: Budget Utilization by Project',
+    tRDM4:'M4 Projects: Actual Spend (No Budget)',
+    tRDMonthly:'R&D Monthly: M4 vs Non-M4 vs Budget',
+    tOtherBar:'HC / Capex / Corporate: Budget vs Projected (K USD)',
+    tOpExComp:'OpEx Composition (FY2026 Budget)',
+    tOpExTbl:'OpEx Budget Detail (K USD)',tRDTbl:'R&D Project Detail (K USD)',
+    cCat:'Category',cBud:'Annual Budget',cAct:'M1-5 Actual',cEst:'M6-12 Est.',cProj:'FY Projected',
+    cVar:'Variance',cRate:'Util. Rate',cProj:'Project',cM4:'M4',
+    budget:'Budget',actual:'Actual/Est.',estZone:'Estimated',
+    noBudget:'No Budget',savings:'Savings',overspend:'Overspend',
+    ofBudget:'of budget',forecast:'Forecast',
+    hc:'HC (Salaries+Benefits+R&D Contr.)',capex:'Capex',corp:'Corporate Level',
+    cat:{rdHW:'R&D Hardware',profFee:'Professional Fee',rent:'Office Rent & Lease',office:'Office Expenses',shipNY:'Shipping to NY HQ',soft:'Software',benGift:'Benefits (Gift&Events)',benHealth:'Benefits (Health Ins.)',te:'T&E Expenses',other:'Other Expenses',total:'Total OpEx'},
+    pieL:['Office Rent','R&D Hardware','T&E Expenses','Office Expenses','Software','Benefits (Health Ins.)','Shipping to NY','Professional Fee','Benefits (Gift)','Other'],
+  },
+  zh:{
+    headerTitle:'Caper China 2026 预算 Dashboard',
+    headerSub:'单位: 千美元 (K USD) | M1-5 实际 + M6-12 预估',
+    banOpExT:'OpEx 预算进展',banOpExS:'Non-Payroll 运营费用',
+    banRDT:'R&D 预算进展',banRDS:'M4以外: 实际 vs 预算 | M4: 仅列示实际花费(无预算)',
+    banOtherT:'其他费用维度',banOtherS:'人力、资本支出及公司级费用（独立于OpEx预算）',
+    kBudget:'FY2026 年度预算',kYTD:'M1-5 实际累计',kForecast:'全年预测',
+    kOther:'其他维度概览',kRDBud:'Non-M4 R&D 预算',kRDYTD:'Non-M4 M1-5 实际',kM4YTD:'M4 M1-5 实际',
+    kSavings:'节余',kOverspend:'超支',kOnTrack:'正常',
+    tOpExTrend:'OpEx 月度: 预算 vs 实际/预估',
+    tRDBudget:'R&D Non-M4 项目预算使用率',
+    tRDM4:'M4 项目: 实际花费 (无预算)',
+    tRDMonthly:'R&D 月度: M4 vs Non-M4 vs 预算',
+    tOtherBar:'人力 / 资本支出 / 公司级: 预算 vs 预估 (K USD)',
+    tOpExComp:'OpEx 构成 (FY2026 预算)',
+    tOpExTbl:'OpEx 预算明细 (K USD)',tRDTbl:'R&D 项目明细 (K USD)',
+    cCat:'费用类别',cBud:'年度预算',cAct:'M1-5 实际',cEst:'M6-12 预估',cProj:'预估全年',
+    cVar:'差异',cRate:'使用率',cProj:'项目',cM4:'M4',
+    budget:'预算',actual:'实际/预估',estZone:'预估区间',
+    noBudget:'无预算',savings:'节余',overspend:'超支',
+    ofBudget:'占预算',forecast:'预测',
+    hc:'人力相关 (薪酬+福利+R&D外包)',capex:'资本支出',corp:'公司级费用',
+    cat:{rdHW:'R&D 硬件费',profFee:'专业服务费',rent:'办公租金',office:'办公费用',shipNY:'运输费(至NY HQ)',soft:'软件费用',benGift:'福利(礼品&活动)',benHealth:'福利(医疗保险)',te:'差旅费用',other:'其他费用',total:'OpEx 合计'},
+    pieL:['办公租金','R&D硬件费','差旅费用','办公费用','软件费用','福利(医疗)','运输费(NY)','专业服务费','福利(礼品)','其他'],
+  }
+};
+const t=k=>I[L][k]||k;
+const tc=k=>I[L].cat[k]||k;
+
+// ===== CHARTS =====
+let C={};
+function init(){
+  C.trend=echarts.init(document.getElementById('cOpExTrend'));
+  C.rdBud=echarts.init(document.getElementById('cRDBudget'));
+  C.rdM4=echarts.init(document.getElementById('cRDM4'));
+  C.rdMon=echarts.init(document.getElementById('cRDMonthly'));
+  C.otherBar=echarts.init(document.getElementById('cOtherBar'));
+  C.comp=echarts.init(document.getElementById('cOpExComp'));
+}
+
+function render(){
+  setTexts(); renderKPIs(); renderTrend(); renderRDBudget(); renderRDM4();
+  renderRDMonthly(); renderOtherBar(); renderComp(); renderOpExTable(); renderRDTable();
+}
+
+function setTexts(){
+  const ids={headerTitle:'headerTitle',headerSub:'headerSub',banOpExT:'banOpExT',banOpExS:'banOpExS',banRDT:'banRDT',banRDS:'banRDS',banOtherT:'banOtherT',banOtherS:'banOtherS',tOpExTrend:'tOpExTrend',tRDBudget:'tRDBudget',tRDM4:'tRDM4',tRDMonthly:'tRDMonthly',tOtherBar:'tOtherBar',tOpExComp:'tOpExComp',tOpExTbl:'tOpExTbl',tRDTbl:'tRDTbl',footer:'footer'};
+  Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.textContent=t(k)});
+}
+
+function badge(rate){
+  if(rate<90)return`<span class="kpi-badge g">${t('kSavings')}</span>`;
+  if(rate>105)return`<span class="kpi-badge r">${t('kOverspend')}</span>`;
+  return`<span class="kpi-badge y">${t('kOnTrack')}</span>`;
+}
+
+function renderKPIs(){
+  const bT=FYB(OT),aY=FYA(OT),proj=FYT(OT),rem=bT-proj;
+  const ytdPct=bT>0?(aY/bT*100):0;
+
+  // Other dimensions totals
+  const hcB=FYB(HC),hcProj=hcB; // HC budget=actual
+  const capB=FYB(CAPEX),capProj=FYT(CAPEX);
+  const corpB=FYB(CORP),corpProj=FYT(CORP);
+
+  document.getElementById('kpiOpEx').innerHTML=`
+    <div class="kpi-card">
+      <div class="kpi-label">${t('kBudget')}</div>
+      <div class="kpi-value">${fk(bT)}</div>
+      <div class="pbar"><div class="pfill blue" style="width:100%"></div></div>
+    </div>
+    <div class="kpi-card ${ytdPct<42?'green':'yellow'}">
+      <div class="kpi-label">${t('kYTD')}</div>
+      <div class="kpi-value">${fk(aY)}</div>
+      <div class="kpi-sub">${ytdPct.toFixed(1)}% ${t('ofBudget')} ${badge(ytdPct)}</div>
+      <div class="pbar"><div class="pfill green" style="width:${Math.min(ytdPct,100)}%"></div></div>
+      <div class="plbl">${ytdPct.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card ${rem>0?'green':'red'}">
+      <div class="kpi-label">${t('kForecast')}</div>
+      <div class="kpi-value">${fk(proj)}</div>
+      <div class="kpi-sub">${rem>0?t('savings'):t('overspend')}: ${fk(Math.abs(rem))} ${badge(proj/bT*100)}</div>
+      <div class="pbar"><div class="pfill ${proj/bT>1?'red':'blue'}" style="width:${Math.min(proj/bT*100,100)}%"></div></div>
+      <div class="plbl">${(proj/bT*100).toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">${t('hc')}</div>
+      <div class="kpi-value">${fk(hcProj)}</div>
+      <div class="kpi-sub">Budget: ${fk(hcB)}</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">${t('capex')}</div>
+      <div class="kpi-value">${fk(capProj)}</div>
+      <div class="kpi-sub">Budget: ${fk(capB)} | ${t('corp')}: ${fk(corpProj)}</div>
+    </div>`;
+
+  // R&D KPIs
+  let nmB=0,nmA=0,m4A=0;
+  Object.values(RD).forEach(p=>{if(p.m4){m4A+=p.ytd}else{nmB+=p.bytd;nmA+=p.ytd}});
+  const rdPct=nmB>0?(nmA/nmB*100):0;
+  document.getElementById('kpiRD').innerHTML=`
+    <div class="kpi-card purple">
+      <div class="kpi-label">${t('kRDBud')}</div>
+      <div class="kpi-value">${fk(nmB)}</div>
+      <div class="pbar"><div class="pfill purple" style="width:100%"></div></div>
+    </div>
+    <div class="kpi-card ${rdPct<50?'green':'yellow'}">
+      <div class="kpi-label">${t('kRDYTD')}</div>
+      <div class="kpi-value">${fk(nmA)}</div>
+      <div class="kpi-sub">${rdPct.toFixed(1)}% ${t('ofBudget')} ${badge(rdPct)}</div>
+      <div class="pbar"><div class="pfill ${rdPct>100?'red':'green'}" style="width:${Math.max(0,Math.min(rdPct,100))}%"></div></div>
+      <div class="plbl">${rdPct.toFixed(1)}%</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">${t('kM4YTD')}</div>
+      <div class="kpi-value">${fk(m4A)}</div>
+      <div class="kpi-sub"><span class="tag tag-m4">M4</span> <span class="tag tag-nb">${t('noBudget')}</span></div>
+    </div>`;
+}
+
+function renderTrend(){
+  const fy=FYP(OT);
+  C.trend.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'cross'},formatter:p=>{
+      let s=`<b>${p[0].axisValue} 2026</b><br/>`;
+      p.forEach(x=>{s+=`${x.marker} ${x.seriesName}: <b>${x.value.toFixed(1)}</b> K<br/>`});
+      return s;
+    }},
+    legend:{data:[t('budget'),t('actual')],top:0},
+    grid:{left:50,right:20,top:40,bottom:30},
+    xAxis:{type:'category',data:M},
+    yAxis:{type:'value',name:'K USD'},
+    series:[
+      {name:t('budget'),type:'line',data:OT.b,lineStyle:{width:2.5,color:'#1a73e8',type:'dashed'},itemStyle:{color:'#1a73e8'},symbol:'circle',symbolSize:5},
+      {name:t('actual'),type:'line',data:fy,lineStyle:{width:2.5,color:'#0d904f'},itemStyle:{color:'#0d904f'},symbol:'diamond',symbolSize:6,
+        areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(13,144,79,0.1)'},{offset:1,color:'rgba(13,144,79,0)'}])},
+        markArea:{silent:true,data:[[{xAxis:'May',itemStyle:{color:'rgba(26,115,232,0.03)'}},{xAxis:'Dec'}]],label:{show:true,position:'insideTop',formatter:t('estZone'),fontSize:10,color:'#999'}}
+      }
+    ]
+  },true);
+}
+
+function renderRDBudget(){
+  const ps=Object.entries(RD).filter(([k,p])=>!p.m4&&p.bytd>0);
+  const ns=ps.map(([k,p])=>{const n=p.n.replace('R&D-','');return n.length>22?n.substring(0,20)+'..':n});
+  const rates=ps.map(([k,p])=>p.bytd>0?+(p.ytd/p.bytd*100).toFixed(1):0);
+  const acts=ps.map(([k,p])=>+p.ytd.toFixed(1));
+  const buds=ps.map(([k,p])=>+p.bytd.toFixed(1));
+
+  C.rdBud.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'},formatter:p=>{
+      const i=p[0].dataIndex;const[k,pr]=ps[i];
+      return`<b>${pr.n}</b><br/>${t('cAct')}: <b>${acts[i]}</b> K<br/>${t('cBud')}: <b>${buds[i]}</b> K<br/>${t('cRate')}: <b style="color:${rates[i]>100?'#d93025':'#0d904f'}">${rates[i]}%</b>`;
+    }},
+    grid:{left:130,right:55,top:10,bottom:20},
+    xAxis:{type:'value',max:100,axisLabel:{formatter:'{value}%'}},
+    yAxis:{type:'category',data:ns,axisLabel:{fontSize:10}},
+    series:[{
+      type:'bar',barWidth:'50%',
+      data:rates.map(r=>({value:r,itemStyle:{color:r>100?'#d93025':r>70?'#f9ab00':'#0d904f',borderRadius:[0,4,4,0]}})),
+      label:{show:true,position:'right',formatter:p=>p.value.toFixed(1)+'%',fontSize:10}
+    }]
+  },true);
+}
+
+function renderRDM4(){
+  const m4=Object.values(RD).filter(p=>p.m4);
+  const ns=m4.map(p=>p.n.replace('R&D-',''));
+  const md=m4.map(p=>p.a.map(v=>+v.toFixed(2)));
+
+  C.rdM4.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    legend:{data:ns,top:0},
+    grid:{left:40,right:15,top:30,bottom:20},
+    xAxis:{type:'category',data:M},
+    yAxis:{type:'value',name:'K USD'},
+    series:m4.map((p,i)=>({name:ns[i],type:'bar',data:md[i],itemStyle:{color:i===0?'#7b1fa2':'#ab47bc',borderRadius:[4,4,0,0]}})),
+    graphic:[{type:'text',right:15,top:5,style:{text:`[${t('noBudget')}]`,fontSize:10,fill:'#7b1fa2'}}]
+  },true);
+}
+
+function renderRDMonthly(){
+  const m4A=Array(12).fill(0),nmA=Array(12).fill(0),nmB=Array(12).fill(0);
+  Object.values(RD).forEach(p=>{
+    for(let i=0;i<12;i++){
+      const v=p.a[i]||0;
+      if(p.m4)m4A[i]+=v;else{nmA[i]+=v;nmB[i]+=(p.bd[i]||0)}
+    }
+  });
+
+  C.rdMon.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    legend:{data:['M4 Actual','Non-M4 Actual','Non-M4 Budget'],top:0},
+    grid:{left:45,right:15,top:35,bottom:20},
+    xAxis:{type:'category',data:M},
+    yAxis:{type:'value',name:'K USD'},
+    series:[
+      {name:'M4 Actual',type:'bar',stack:'a',data:m4A.map(v=>+v.toFixed(1)),itemStyle:{color:'#7b1fa2'}},
+      {name:'Non-M4 Actual',type:'bar',stack:'a',data:nmA.map(v=>+v.toFixed(1)),itemStyle:{color:'#ab47bc',borderRadius:[4,4,0,0]}},
+      {name:'Non-M4 Budget',type:'line',data:nmB.map(v=>+v.toFixed(1)),lineStyle:{width:2,type:'dashed',color:'#333'},itemStyle:{color:'#333'},symbol:'none'}
+    ]
+  },true);
+}
+
+function renderOtherBar(){
+  const hcP=FYT(HC)||FYB(HC),capP=FYT(CAPEX),corpP=FYT(CORP);
+  const hcB=FYB(HC),capB=FYB(CAPEX),corpB=FYB(CORP);
+  const labels=[t('hc'),t('capex'),t('corp')];
+  const bds=[+hcB.toFixed(1),+capB.toFixed(1),+corpB.toFixed(1)];
+  const pjs=[+hcP.toFixed(1),+capP.toFixed(1),+corpP.toFixed(1)];
+
+  C.otherBar.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    legend:{data:[t('budget'),t('actual')],top:0},
+    grid:{left:140,right:25,top:35,bottom:20},
+    xAxis:{type:'value',name:'K USD'},
+    yAxis:{type:'category',data:labels,axisLabel:{fontSize:11}},
+    series:[
+      {name:t('budget'),type:'bar',data:bds,itemStyle:{color:'#1a73e8',borderRadius:[0,4,4,0]},barGap:'10%'},
+      {name:t('actual'),type:'bar',data:pjs,itemStyle:{color:'#0d904f',borderRadius:[0,4,4,0]}}
+    ]
+  },true);
+}
+
+function renderComp(){
+  const cats=['rent','rdHW','te','office','soft','benHealth','shipNY','profFee','benGift','other'];
+  const pd=cats.map((k,i)=>({value:+FYB(O[k]).toFixed(1),name:t('pieL')[i]}));
+  C.comp.setOption({
+    tooltip:{trigger:'item',formatter:p=>`${p.name}<br/>${p.marker} ${p.value} K (${p.percent}%)`},
+    legend:{orient:'vertical',right:5,top:'center',textStyle:{fontSize:10}},
+    series:[{type:'pie',radius:['35%','65%'],center:['35%','50%'],itemStyle:{borderRadius:4,borderColor:'#fff',borderWidth:2},label:{formatter:'{b}\n{d}%',fontSize:9},emphasis:{label:{fontSize:12,fontWeight:'bold'}},data:pd,color:['#1a73e8','#d93025','#f9ab00','#4285f4','#0d904f','#ff6d01','#5e97f6','#7baaf7','#34a853','#9334e6']}]
+  },true);
+}
+
+function renderOpExTable(){
+  const cats=['rent','rdHW','te','office','soft','benHealth','shipNY','profFee','benGift','other'];
+  let h=`<table><thead><tr><th>${t('cCat')}</th><th>${t('cBud')}</th><th>${t('cAct')}</th><th>${t('cEst')}</th><th>${t('cProj')}</th><th>${t('cVar')}</th><th>${t('cRate')}</th></tr></thead><tbody>`;
+  cats.forEach(k=>{
+    const r=O[k];const b=FYB(r),a=FYA(r),e=FYE(r),p=a+e,v=b-p;
+    const rt=b>0?(p/b*100):0;const c=v>0?'vp':v<0?'vn':'';
+    h+=`<tr><td>${tc(k)}</td><td>${b.toFixed(1)}</td><td>${a.toFixed(1)}</td><td>${e.toFixed(1)}</td><td>${p.toFixed(1)}</td><td class="${c}">${v>=0?'+':''}${v.toFixed(1)}</td><td class="${c}">${rt.toFixed(1)}%</td></tr>`;
+  });
+  const b=FYB(OT),a=FYA(OT),e=FYE(OT),p=a+e,v=b-p,rt=b>0?(p/b*100):0,c=v>0?'vp':v<0?'vn':'';
+  h+=`<tr class="trow"><td>${tc('total')}</td><td>${b.toFixed(1)}</td><td>${a.toFixed(1)}</td><td>${e.toFixed(1)}</td><td>${p.toFixed(1)}</td><td class="${c}">${v>=0?'+':''}${v.toFixed(1)}</td><td class="${c}">${rt.toFixed(1)}%</td></tr>`;
+  h+='</tbody></table>';
+  document.getElementById('opexTbl').innerHTML=h;
+}
+
+function renderRDTable(){
+  let h=`<table><thead><tr><th>${t('cProj')}</th><th>${t('cM4')}</th><th>${t('cBud')}</th><th>${t('cAct')}</th><th>${t('cVar')}</th><th>${t('cRate')}</th></tr></thead><tbody>`;
+  const nm=Object.entries(RD).filter(([k,p])=>!p.m4);
+  let nmB=0,nmA=0;
+  nm.forEach(([k,p])=>{
+    const v=p.bytd-p.ytd;const rt=p.bytd>0?(p.ytd/p.bytd*100):(p.ytd!==0?NaN:0);
+    const c=v>0?'vp':v<0?'vn':'';const nb=p.bytd===0;
+    nmB+=p.bytd;nmA+=p.ytd;
+    h+=`<tr><td>${p.n}</td><td></td><td>${nb?'<span class="tag tag-nb">'+t('noBudget')+'</span>':p.bytd.toFixed(1)}</td><td>${p.ytd.toFixed(1)}</td><td class="${c}">${nb?'-':(v>=0?'+':'')+v.toFixed(1)}</td><td class="${c}">${nb?'-':(isNaN(rt)?'N/A':rt.toFixed(1)+'%')}</td></tr>`;
+  });
+  const nmV=nmB-nmA,nmRt=nmB>0?(nmA/nmB*100):0,nmC=nmV>0?'vp':'vn';
+  h+=`<tr class="srow"><td>Non-M4 Subtotal</td><td></td><td>${nmB.toFixed(1)}</td><td>${nmA.toFixed(1)}</td><td class="${nmC}">${nmV>=0?'+':''}${nmV.toFixed(1)}</td><td class="${nmC}">${nmRt.toFixed(1)}%</td></tr>`;
+  const m4=Object.entries(RD).filter(([k,p])=>p.m4);
+  let m4A=0;m4.forEach(([k,p])=>{m4A+=p.ytd;
+    h+=`<tr><td>${p.n}</td><td><span class="tag tag-m4">M4</span></td><td><span class="tag tag-nb">${t('noBudget')}</span></td><td>${p.ytd.toFixed(2)}</td><td>-</td><td>-</td></tr>`;
+  });
+  h+=`<tr class="srow"><td>M4 Subtotal</td><td><span class="tag tag-m4">M4</span></td><td>-</td><td>${m4A.toFixed(2)}</td><td>-</td><td>-</td></tr>`;
+  h+='</tbody></table>';
+  document.getElementById('rdTbl').innerHTML=h;
+}
+
+function switchLang(l){
+  L=l;
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.lang-btn')[l==='zh'?0:1].classList.add('active');
+  render();Object.values(C).forEach(c=>c.resize());
+}
+
+window.addEventListener('load',()=>{init();render()});
+window.addEventListener('resize',()=>{Object.values(C).forEach(c=>c.resize())});
+</script>
+</body>
+</html>
